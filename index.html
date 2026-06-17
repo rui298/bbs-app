@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>匿名掲示板</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <span class="site-logo" id="siteLogo">📋 匿名掲示板</span>
+      <button class="btn-new" id="btnNew">＋ スレを立てる</button>
+    </div>
+  </header>
+
+  <!-- スレ立てモーダル -->
+  <div class="modal-overlay hidden" id="modal">
+    <div class="modal">
+      <p class="modal-title">スレを立てる</p>
+      <input type="text" id="threadTitleInput" placeholder="タイトルを入力..." maxlength="100">
+      <div class="modal-actions">
+        <button class="btn-primary" id="submitThread">立てる</button>
+        <button class="btn-cancel" id="cancelThread">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- スレッド一覧 -->
+  <div id="boardView">
+    <div class="container">
+      <div id="threadList" class="thread-list"></div>
+      <div id="boardEmpty" class="empty hidden">まだスレッドがありません</div>
+    </div>
+  </div>
+
+  <!-- スレッド内ビュー -->
+  <div id="threadView" class="hidden">
+    <div class="thread-top">
+      <div class="container">
+        <button class="btn-back" id="btnBack">← 掲示板に戻る</button>
+        <h2 id="threadTitle"></h2>
+      </div>
+    </div>
+    <div class="container">
+      <div id="postList" class="post-list"></div>
+      <div id="threadEmpty" class="empty hidden">まだ投稿がありません。最初の書き込みをどうぞ！</div>
+    </div>
+    <div class="post-form-wrap">
+      <div class="container">
+        <div class="post-form">
+          <input type="text" id="postName" placeholder="名前（空欄で名無し）" maxlength="30">
+          <textarea id="postContent" placeholder="本文を入力..." maxlength="1000" rows="3"></textarea>
+          <button class="btn-primary" id="submitPost">書き込む</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
