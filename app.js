@@ -13,6 +13,113 @@ const ICONS = [
   '🐳','🦈','🦑','🐿️','🦒','🦓','🐘','🦏',
 ];
 
+// ━━━ 下書き管理 ━━━
+
+const DRAFT_AUTO_KEY = 'bbs_auto_draft';
+const DRAFT_LIST_KEY = 'bbs_drafts';
+const MAX_DRAFTS = 20;
+let autoSaveTimer = null;
+
+function getDrafts() {
+  try { return JSON.parse(localStorage.getItem(DRAFT_LIST_KEY) || '[]'); } catch(e) { return []; }
+}
+
+function saveDrafts(drafts) {
+  localStorage.setItem(DRAFT_LIST_KEY, JSON.stringify(drafts));
+}
+
+// 自動保存（入力のたびに500msデバウンス）
+function triggerAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(function() {
+    const content = document.getElementById('postContent').value;
+    if (content.trim()) {
+      localStorage.setItem(DRAFT_AUTO_KEY, content);
+      const label = document.getElementById('autoSaveLabel');
+      label.textContent = '自動保存済み';
+      setTimeout(function() { label.textContent = ''; }, 2000);
+    } else {
+      localStorage.removeItem(DRAFT_AUTO_KEY);
+    }
+  }, 500);
+}
+
+// 手動で下書き保存
+function saveDraft() {
+  const content = document.getElementById('postContent').value.trim();
+  if (!content) return;
+  const drafts = getDrafts();
+  drafts.unshift({ id: Date.now(), content, savedAt: new Date().toISOString() });
+  if (drafts.length > MAX_DRAFTS) drafts.pop();
+  saveDrafts(drafts);
+  updateDraftCount();
+  const label = document.getElementById('autoSaveLabel');
+  label.textContent = '保存しました';
+  setTimeout(function() { label.textContent = ''; }, 2000);
+}
+
+// 下書きの件数表示を更新
+function updateDraftCount() {
+  document.getElementById('draftCount').textContent = getDrafts().length;
+}
+
+// 下書き一覧モーダルを開く
+function openDraftModal() {
+  renderDraftList();
+  document.getElementById('draftModal').classList.remove('hidden');
+}
+
+function closeDraftModal() {
+  document.getElementById('draftModal').classList.add('hidden');
+}
+
+// 下書き一覧を描画
+function renderDraftList() {
+  const drafts = getDrafts();
+  const container = document.getElementById('draftList');
+  container.innerHTML = '';
+
+  if (drafts.length === 0) {
+    container.innerHTML = '<div class="draft-empty">下書きはありません</div>';
+    return;
+  }
+
+  drafts.forEach(function(draft) {
+    const item = document.createElement('div');
+    item.className = 'draft-item';
+    item.innerHTML =
+      '<div class="draft-content">' +
+        '<div class="draft-text">' + escapeHtml(draft.content) + '</div>' +
+        '<div class="draft-time">' + formatDate(draft.savedAt) + '</div>' +
+      '</div>' +
+      '<button class="btn-draft-delete" data-id="' + draft.id + '" title="削除">✕</button>';
+
+    // 本文クリックで読み込み
+    item.querySelector('.draft-content').addEventListener('click', function() {
+      document.getElementById('postContent').value = draft.content;
+      document.getElementById('postContent').focus();
+      closeDraftModal();
+    });
+
+    // 削除ボタン
+    item.querySelector('.btn-draft-delete').addEventListener('click', function(e) {
+      e.stopPropagation();
+      const newDrafts = getDrafts().filter(function(d) { return d.id !== draft.id; });
+      saveDrafts(newDrafts);
+      updateDraftCount();
+      renderDraftList();
+    });
+
+    container.appendChild(item);
+  });
+}
+
+// スレッドを開いたとき自動保存の内容を復元
+function restoreAutoDraft() {
+  const saved = localStorage.getItem(DRAFT_AUTO_KEY);
+  if (saved) document.getElementById('postContent').value = saved;
+}
+
 // プロフィールをlocalStorageから読む
 function loadProfile() {
   return {
@@ -110,6 +217,7 @@ async function openThread(thread) {
 
   await loadPosts();
   subscribeRealtime();
+  restoreAutoDraft();
 }
 
 function closeThread() {
@@ -258,6 +366,7 @@ async function submitPost() {
   btn.disabled = false;
   contentEl.value = '';
   contentEl.focus();
+  localStorage.removeItem(DRAFT_AUTO_KEY);
 }
 
 // ━━━ モーダル ━━━
@@ -352,6 +461,16 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('postContent').addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitPost();
   });
+
+  // 下書き
+  document.getElementById('postContent').addEventListener('input', triggerAutoSave);
+  document.getElementById('btnDraftSave').addEventListener('click', saveDraft);
+  document.getElementById('btnDraftList').addEventListener('click', openDraftModal);
+  document.getElementById('closeDraftModal').addEventListener('click', closeDraftModal);
+  document.getElementById('draftModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDraftModal();
+  });
+  updateDraftCount();
 
   syncProfileUI();
   loadThreads();

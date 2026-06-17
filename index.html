@@ -17,6 +17,17 @@
     </div>
   </header>
 
+  <!-- 下書き一覧モーダル -->
+  <div class="modal-overlay hidden" id="draftModal">
+    <div class="modal draft-modal">
+      <p class="modal-title">下書き一覧</p>
+      <div id="draftList" class="draft-list"></div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn-cancel" id="closeDraftModal">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <!-- プロフィール設定モーダル -->
   <div class="modal-overlay hidden" id="profileModal">
     <div class="modal">
@@ -71,6 +82,11 @@
             <div class="post-my-avatar" id="postMyAvatar">🐱</div>
             <textarea id="postContent" placeholder="書き込む..." maxlength="1000" rows="2"></textarea>
             <button class="btn-primary" id="submitPost">投稿</button>
+          </div>
+          <div class="draft-actions">
+            <button class="btn-draft-save" id="btnDraftSave">下書き保存</button>
+            <button class="btn-draft-list" id="btnDraftList">下書き一覧 <span id="draftCount">0</span>件</button>
+            <span class="auto-save-label" id="autoSaveLabel"></span>
           </div>
         </div>
       </div>
