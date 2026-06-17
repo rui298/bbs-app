@@ -258,9 +258,9 @@ async function loadPosts(threadId) {
 
   currentThreadPostCount = (posts || []).length;
 
-  // 番号→投稿マップ（引用参照用）
+  // UUID→{post, num} マップ（引用参照用）
   const postMap = {};
-  (posts || []).forEach((p, i) => { postMap[i + 1] = p; });
+  (posts || []).forEach((p, i) => { postMap[p.id] = { post: p, num: i + 1 }; });
 
   // リアクション一括取得
   const postIds = (posts || []).map(p => p.id);
@@ -299,12 +299,12 @@ function appendPost(post, num, postMap, reactions) {
   const myToken = getMyToken();
   const isOwner = post.owner_token === myToken;
 
-  // 引用返信プレビュー
+  // 引用返信プレビュー（reply_to は UUID）
   let replyHtml = '';
   if (post.reply_to && postMap && postMap[post.reply_to]) {
-    const ref = postMap[post.reply_to];
+    const { post: ref, num: refNum } = postMap[post.reply_to];
     const preview = ref.content.substring(0, 40) + (ref.content.length > 40 ? '…' : '');
-    replyHtml = `<div class="post-reply-ref" data-num="${post.reply_to}">&gt;&gt;${post.reply_to} ${escHtml(preview)}</div>`;
+    replyHtml = `<div class="post-reply-ref" data-ref-id="${post.reply_to}" data-ref-num="${refNum}">&gt;&gt;${refNum} ${escHtml(preview)}</div>`;
   }
 
   const imgHtml = post.image_url
@@ -345,14 +345,14 @@ function appendPost(post, num, postMap, reactions) {
   `;
 
   // >>N クリックで引用返信
-  item.querySelector('.post-num').addEventListener('click', () => startReply(num));
+  item.querySelector('.post-num').addEventListener('click', () => startReply(num, post.id));
 
   // 引用プレビュークリックで元投稿へスクロール
   const refEl = item.querySelector('.post-reply-ref');
   if (refEl) {
     refEl.addEventListener('click', () => {
-      const n = parseInt(refEl.dataset.num);
-      const target = document.querySelector(`.post-item[data-num="${n}"]`);
+      const refId = refEl.dataset.refId;
+      const target = document.querySelector(`.post-item[data-id="${refId}"]`);
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
@@ -368,7 +368,7 @@ function appendPost(post, num, postMap, reactions) {
   });
 
   // 返信
-  item.querySelector('.btn-reply-post').addEventListener('click', () => startReply(num));
+  item.querySelector('.btn-reply-post').addEventListener('click', () => startReply(num, post.id));
 
   // 編集
   const editBtn = item.querySelector('.btn-edit-post');
@@ -455,8 +455,9 @@ function toggleReactionPicker(btn, postId) {
 }
 
 // ─── 引用返信 ───
-function startReply(num) {
-  replyToPost = num;
+// replyToPost = { num: 表示番号, id: UUID }
+function startReply(num, postId) {
+  replyToPost = { num, id: postId };
   document.getElementById('replyIndicatorText').textContent = `>> ${num} に返信`;
   document.getElementById('replyIndicator').classList.remove('hidden');
   document.getElementById('postContent').focus();
@@ -530,7 +531,7 @@ async function submitPost() {
     icon: profile.icon,
     content: content || '',
     owner_token: getMyToken(),
-    reply_to: replyToPost || null,
+    reply_to: replyToPost ? replyToPost.id : null,
     image_url: imageUrl,
   };
 
@@ -549,7 +550,15 @@ async function submitPost() {
     }).eq('id', currentThread.id);
     // 自分の投稿を即時表示（リアルタイムの重複防止）
     if (!document.querySelector(`.post-item[data-id="${newPost.id}"]`)) {
-      appendPost(newPost, currentThreadPostCount, null, []);
+      // 既存投稿からpostMapを構築して引用プレビューを表示
+      const domMap = {};
+      document.querySelectorAll('.post-item').forEach(el => {
+        const id = el.dataset.id;
+        const n = parseInt(el.dataset.num);
+        const content = el.querySelector('.post-body')?.textContent || '';
+        if (id && n) domMap[id] = { post: { id, content }, num: n };
+      });
+      appendPost(newPost, currentThreadPostCount, domMap, []);
     }
     markRead(currentThread.id, currentThreadPostCount);
   }
