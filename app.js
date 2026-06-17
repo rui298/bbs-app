@@ -46,16 +46,23 @@ async function loadThreads() {
   }
 
   empty.classList.add('hidden');
-  data.forEach(function(thread, i) {
+  data.forEach(function(thread) {
+    const initial = thread.title.charAt(0);
     const item = document.createElement('div');
     item.className = 'thread-item';
     item.innerHTML =
-      '<span class="thread-num">' + (i + 1) + '</span>' +
-      '<div class="thread-info">' +
+      '<div class="thread-icon">' + escapeHtml(initial) + '</div>' +
+      '<div class="thread-body">' +
+        '<div class="thread-top-row">' +
+          '<span class="thread-author">名無し</span>' +
+          '<span class="thread-time">· ' + formatDate(thread.created_at) + '</span>' +
+        '</div>' +
         '<div class="thread-name">' + escapeHtml(thread.title) + '</div>' +
-        '<div class="thread-meta">' + formatDate(thread.created_at) + '</div>' +
-      '</div>' +
-      '<span class="thread-count">' + thread.post_count + '件</span>';
+        '<div class="thread-actions">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"/></svg>' +
+          thread.post_count + '件の返信' +
+        '</div>' +
+      '</div>';
     item.addEventListener('click', function() { openThread(thread); });
     list.appendChild(item);
   });
@@ -126,16 +133,21 @@ function appendPost(post, num) {
     num = list.children.length + 1;
   }
 
+  const name = post.name || '名無し';
   const item = document.createElement('div');
   item.className = 'post-item';
   item.innerHTML =
-    '<div class="post-header">' +
-      '<span class="post-num">' + num + '</span>' +
-      '<span class="post-name">' + escapeHtml(post.name || '名無し') + '</span>' +
-      '<span class="post-time">' + formatDate(post.created_at) + '</span>' +
-      '<span class="post-id">ID:' + shortId(post.id) + '</span>' +
-    '</div>' +
-    '<div class="post-body">' + escapeHtml(post.content) + '</div>';
+    '<div class="post-avatar">' + escapeHtml(name.charAt(0)) + '</div>' +
+    '<div class="post-right">' +
+      '<div class="post-header">' +
+        '<span class="post-name">' + escapeHtml(name) + '</span>' +
+        '<span class="post-id">ID:' + shortId(post.id) + '</span>' +
+        '<span class="post-dot">·</span>' +
+        '<span class="post-time">' + formatDate(post.created_at) + '</span>' +
+        '<span class="post-num">' + num + '</span>' +
+      '</div>' +
+      '<div class="post-body">' + escapeHtml(post.content) + '</div>' +
+    '</div>';
   list.appendChild(item);
 }
 
