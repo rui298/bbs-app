@@ -13,6 +13,17 @@ const ICONS = [
   '🐳','🦈','🦑','🐿️','🦒','🦓','🐘','🦏',
 ];
 
+// ━━━ 端末トークン管理 ━━━
+
+function getMyToken() {
+  let token = localStorage.getItem('bbs_token');
+  if (!token) {
+    token = crypto.randomUUID();
+    localStorage.setItem('bbs_token', token);
+  }
+  return token;
+}
+
 // ━━━ 下書き管理 ━━━
 
 const DRAFT_AUTO_KEY = 'bbs_auto_draft';
@@ -184,6 +195,7 @@ async function loadThreads() {
   empty.classList.add('hidden');
   data.forEach(function(thread) {
     const initial = thread.title.charAt(0);
+    const isOwner = thread.owner_token === getMyToken();
     const item = document.createElement('div');
     item.className = 'thread-item';
     item.innerHTML =
@@ -192,6 +204,7 @@ async function loadThreads() {
         '<div class="thread-top-row">' +
           '<span class="thread-author">名無し</span>' +
           '<span class="thread-time">· ' + formatDate(thread.created_at) + '</span>' +
+          (isOwner ? '<button class="btn-delete-thread" data-id="' + thread.id + '" title="削除">🗑</button>' : '') +
         '</div>' +
         '<div class="thread-name">' + escapeHtml(thread.title) + '</div>' +
         '<div class="thread-actions">' +
@@ -199,7 +212,18 @@ async function loadThreads() {
           thread.post_count + '件の返信' +
         '</div>' +
       '</div>';
-    item.addEventListener('click', function() { openThread(thread); });
+
+    item.querySelector('.thread-body').addEventListener('click', function(e) {
+      if (!e.target.classList.contains('btn-delete-thread')) openThread(thread);
+    });
+
+    if (isOwner) {
+      item.querySelector('.btn-delete-thread').addEventListener('click', function(e) {
+        e.stopPropagation();
+        deleteThread(thread.id, item);
+      });
+    }
+
     list.appendChild(item);
   });
 }
@@ -272,6 +296,7 @@ function appendPost(post, num) {
 
   const name = post.name || '名無し';
   const icon = post.icon || '🐱';
+  const isOwner = post.owner_token === getMyToken();
   const item = document.createElement('div');
   item.className = 'post-item';
   item.innerHTML =
@@ -282,9 +307,17 @@ function appendPost(post, num) {
         '<span class="post-dot">·</span>' +
         '<span class="post-time">' + formatDate(post.created_at) + '</span>' +
         '<span class="post-num">' + num + '</span>' +
+        (isOwner ? '<button class="btn-delete-post" data-id="' + post.id + '" title="削除">🗑</button>' : '') +
       '</div>' +
       '<div class="post-body">' + escapeHtml(post.content) + '</div>' +
     '</div>';
+
+  if (isOwner) {
+    item.querySelector('.btn-delete-post').addEventListener('click', function() {
+      deletePost(post.id, item);
+    });
+  }
+
   list.appendChild(item);
 }
 
@@ -321,7 +354,7 @@ async function submitThread() {
   const btn = document.getElementById('submitThread');
   btn.disabled = true;
 
-  const { error } = await db.from('threads').insert({ title });
+  const { error } = await db.from('threads').insert({ title, owner_token: getMyToken() });
   btn.disabled = false;
 
   if (error) { alert('スレ立て失敗しました'); console.error(error); return; }
@@ -349,6 +382,7 @@ async function submitPost() {
     name,
     icon,
     content,
+    owner_token: getMyToken(),
   });
 
   if (postError) { alert('投稿失敗しました'); console.error(postError); btn.disabled = false; return; }
@@ -367,6 +401,22 @@ async function submitPost() {
   contentEl.value = '';
   contentEl.focus();
   localStorage.removeItem(DRAFT_AUTO_KEY);
+}
+
+// ━━━ 削除 ━━━
+
+async function deletePost(postId, element) {
+  if (!confirm('この投稿を削除しますか？')) return;
+  const { error } = await db.from('posts').delete().eq('id', postId).eq('owner_token', getMyToken());
+  if (error) { alert('削除できませんでした'); return; }
+  element.remove();
+}
+
+async function deleteThread(threadId, element) {
+  if (!confirm('このスレッドを削除しますか？\n（投稿も全て削除されます）')) return;
+  const { error } = await db.from('threads').delete().eq('id', threadId).eq('owner_token', getMyToken());
+  if (error) { alert('削除できませんでした'); return; }
+  element.remove();
 }
 
 // ━━━ モーダル ━━━
