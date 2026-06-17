@@ -17,18 +17,12 @@
     </div>
   </header>
 
-  <!-- 下書き一覧モーダル -->
-  <div class="modal-overlay hidden" id="draftModal">
-    <div class="modal draft-modal">
-      <p class="modal-title">下書き一覧</p>
-      <div id="draftList" class="draft-list"></div>
-      <div class="modal-actions" style="margin-top:16px">
-        <button class="btn-cancel" id="closeDraftModal">閉じる</button>
-      </div>
-    </div>
-  </div>
+  <!-- スクロールトップボタン -->
+  <button class="scroll-top hidden" id="scrollTop" title="上へ">↑</button>
 
-  <!-- プロフィール設定モーダル -->
+  <!-- ━━━ モーダル群 ━━━ -->
+
+  <!-- プロフィール設定 -->
   <div class="modal-overlay hidden" id="profileModal">
     <div class="modal">
       <p class="modal-title">プロフィール設定</p>
@@ -43,10 +37,18 @@
     </div>
   </div>
 
-  <!-- スレ立てモーダル -->
+  <!-- スレ立て -->
   <div class="modal-overlay hidden" id="modal">
     <div class="modal">
       <p class="modal-title">スレを立てる</p>
+      <label class="profile-label">カテゴリ</label>
+      <div class="category-select" id="threadCategorySelect">
+        <button class="cat-select-btn active" data-cat="雑談">雑談</button>
+        <button class="cat-select-btn" data-cat="質問">質問</button>
+        <button class="cat-select-btn" data-cat="告知">告知</button>
+        <button class="cat-select-btn" data-cat="その他">その他</button>
+      </div>
+      <label class="profile-label" style="margin-top:14px">タイトル</label>
       <input type="text" id="threadTitleInput" placeholder="タイトルを入力..." maxlength="100">
       <div class="modal-actions">
         <button class="btn-primary" id="submitThread">立てる</button>
@@ -55,20 +57,59 @@
     </div>
   </div>
 
-  <!-- スレッド一覧 -->
-  <div id="boardView">
-    <div class="container">
-      <div id="threadList" class="thread-list"></div>
-      <div id="boardEmpty" class="empty hidden">まだスレッドがありません</div>
+  <!-- 投稿編集 -->
+  <div class="modal-overlay hidden" id="editModal">
+    <div class="modal">
+      <p class="modal-title">投稿を編集</p>
+      <textarea id="editContent" maxlength="1000" rows="5"></textarea>
+      <div class="modal-actions" style="margin-top:12px">
+        <button class="btn-primary" id="saveEdit">保存</button>
+        <button class="btn-cancel" id="cancelEdit">キャンセル</button>
+      </div>
     </div>
   </div>
 
-  <!-- スレッド内ビュー -->
+  <!-- 下書き一覧 -->
+  <div class="modal-overlay hidden" id="draftModal">
+    <div class="modal draft-modal">
+      <p class="modal-title">下書き一覧</p>
+      <div id="draftList" class="draft-list"></div>
+      <div class="modal-actions" style="margin-top:16px">
+        <button class="btn-cancel" id="closeDraftModal">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ━━━ スレッド一覧 ━━━ -->
+  <div id="boardView">
+    <div class="container">
+      <div class="board-search-bar">
+        <input type="search" id="boardSearch" placeholder="🔍 スレッドを検索...">
+      </div>
+      <div class="category-tabs" id="categoryTabs">
+        <button class="cat-tab active" data-cat="全部">全部</button>
+        <button class="cat-tab" data-cat="雑談">雑談</button>
+        <button class="cat-tab" data-cat="質問">質問</button>
+        <button class="cat-tab" data-cat="告知">告知</button>
+        <button class="cat-tab" data-cat="その他">その他</button>
+      </div>
+      <div id="threadList" class="thread-list"></div>
+      <div id="boardEmpty" class="empty hidden">スレッドがありません</div>
+    </div>
+  </div>
+
+  <!-- ━━━ スレッド内 ━━━ -->
   <div id="threadView" class="hidden">
     <div class="thread-top">
       <div class="container">
-        <button class="btn-back" id="btnBack">← スレッド</button>
+        <div class="thread-top-actions">
+          <button class="btn-back" id="btnBack">← 掲示板に戻る</button>
+          <button class="btn-share" id="btnShare" title="リンクをコピー">🔗 共有</button>
+        </div>
         <h2 id="threadTitle"></h2>
+        <div class="post-search-bar">
+          <input type="search" id="postSearch" placeholder="🔍 投稿を検索...">
+        </div>
       </div>
     </div>
     <div class="container">
@@ -77,16 +118,29 @@
     </div>
     <div class="post-form-wrap">
       <div class="container">
+        <div class="reply-indicator hidden" id="replyIndicator">
+          <span id="replyIndicatorText"></span>
+          <button id="cancelReply">✕</button>
+        </div>
+        <div class="image-preview-area hidden" id="imagePreviewArea">
+          <img id="imagePreviewImg" alt="添付画像">
+          <button id="cancelImage" class="cancel-image-btn">✕</button>
+        </div>
         <div class="post-form">
           <div class="post-form-row">
             <div class="post-my-avatar" id="postMyAvatar">🐱</div>
             <textarea id="postContent" placeholder="書き込む..." maxlength="1000" rows="2"></textarea>
             <button class="btn-primary" id="submitPost">投稿</button>
           </div>
-          <div class="draft-actions">
-            <button class="btn-draft-save" id="btnDraftSave">下書き保存</button>
-            <button class="btn-draft-list" id="btnDraftList">下書き一覧 <span id="draftCount">0</span>件</button>
-            <span class="auto-save-label" id="autoSaveLabel"></span>
+          <div class="form-bottom-row">
+            <label class="btn-image-label" for="imageInput" title="画像を添付">📷</label>
+            <input type="file" id="imageInput" accept="image/*" hidden>
+            <span class="char-counter"><span id="charCount">0</span>/1000</span>
+            <div class="draft-actions">
+              <button class="btn-draft-save" id="btnDraftSave">下書き保存</button>
+              <button class="btn-draft-list" id="btnDraftList">一覧 <span id="draftCount">0</span>件</button>
+              <span class="auto-save-label" id="autoSaveLabel"></span>
+            </div>
           </div>
         </div>
       </div>

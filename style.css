@@ -6,9 +6,12 @@
   --accent: #1d9bf0;
   --accent-hover: #1a8cd8;
   --danger: #f4212e;
+  --success: #00ba7c;
   --text: #0f1419;
   --text-muted: #536471;
   --text-dim: #71767b;
+  --radius: 14px;
+  --radius-sm: 8px;
   --header-h: 53px;
 }
 
@@ -26,7 +29,7 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.88);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
   height: var(--header-h);
@@ -50,11 +53,7 @@ header {
   letter-spacing: -0.03em;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.header-actions { display: flex; align-items: center; gap: 10px; }
 
 .btn-profile {
   background: var(--bg);
@@ -68,7 +67,6 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
 }
 
 .btn-profile:hover { background: var(--border); }
@@ -87,11 +85,28 @@ header {
 
 .btn-new:hover { background: var(--accent-hover); }
 
-/* ━━━ コンテナ ━━━ */
-.container {
-  max-width: 600px;
-  margin: 0 auto;
+/* ━━━ スクロールトップ ━━━ */
+.scroll-top {
+  position: fixed;
+  bottom: 220px;
+  right: 20px;
+  z-index: 99;
+  background: var(--text);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
+
+.scroll-top:hover { transform: translateY(-2px); }
+
+/* ━━━ コンテナ ━━━ */
+.container { max-width: 600px; margin: 0 auto; }
 
 .hidden { display: none !important; }
 
@@ -123,6 +138,64 @@ header {
   box-shadow: 0 8px 40px rgba(0,0,0,0.15);
 }
 
+.modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.modal input, .modal textarea {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border-dark);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  padding: 12px 14px;
+  outline: none;
+  margin-bottom: 16px;
+  transition: border-color 0.15s;
+  resize: vertical;
+}
+
+.modal input:focus, .modal textarea:focus { border-color: var(--accent); }
+.modal input::placeholder, .modal textarea::placeholder { color: var(--text-muted); }
+
+.modal-actions { display: flex; gap: 10px; }
+
+.btn-primary {
+  flex: 1;
+  background: var(--text);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-primary:hover { opacity: 0.85; }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border-dark);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-cancel:hover { background: var(--bg); }
+
+/* ━━━ プロフィール ━━━ */
 .profile-label {
   display: block;
   font-size: 13px;
@@ -131,7 +204,6 @@ header {
   margin-bottom: 8px;
 }
 
-/* アイコン選択グリッド */
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -153,60 +225,80 @@ header {
 .icon-btn:hover { background: var(--border); }
 .icon-btn.selected { border-color: var(--accent); background: #e8f5fe; }
 
-.modal-title {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: 20px;
+/* ━━━ カテゴリ選択（スレ作成） ━━━ */
+.category-select {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
-.modal input {
+.cat-select-btn {
+  background: var(--bg);
+  border: 1.5px solid var(--border-dark);
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.cat-select-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ━━━ ボード検索・カテゴリタブ ━━━ */
+.board-search-bar { padding: 12px 16px 8px; }
+
+.board-search-bar input {
   width: 100%;
-  background: transparent;
-  border: 1px solid var(--border-dark);
-  border-radius: 8px;
+  background: var(--bg);
+  border: 1.5px solid var(--border-dark);
+  border-radius: 20px;
   color: var(--text);
-  font-size: 17px;
+  font-size: 14px;
   font-family: inherit;
-  padding: 12px 14px;
+  padding: 9px 16px;
   outline: none;
-  margin-bottom: 16px;
   transition: border-color 0.15s;
 }
 
-.modal input:focus { border-color: var(--accent); }
-.modal input::placeholder { color: var(--text-muted); }
+.board-search-bar input:focus { border-color: var(--accent); }
+.board-search-bar input::placeholder { color: var(--text-muted); }
 
-.modal-actions { display: flex; gap: 10px; }
-
-.btn-primary {
-  flex: 1;
-  background: var(--text);
-  color: #fff;
-  border: none;
-  border-radius: 20px;
-  padding: 12px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s;
+.category-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.btn-primary:hover { opacity: 0.85; }
+.category-tabs::-webkit-scrollbar { display: none; }
 
-.btn-cancel {
-  background: transparent;
-  border: 1px solid var(--border-dark);
-  border-radius: 20px;
-  color: var(--text);
+.cat-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
   font-size: 15px;
   font-weight: 600;
-  padding: 12px 20px;
+  padding: 12px 16px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
 
-.btn-cancel:hover { background: var(--bg); }
+.cat-tab:hover { color: var(--text); }
+
+.cat-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
 
 /* ━━━ スレッド一覧 ━━━ */
 .thread-list { display: flex; flex-direction: column; }
@@ -214,7 +306,7 @@ header {
 .thread-item {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 16px;
+  padding: 14px 16px;
   cursor: pointer;
   transition: background 0.1s;
   display: flex;
@@ -224,39 +316,44 @@ header {
 
 .thread-item:hover { background: #f7f9f9; }
 
+.thread-item.pinned { background: #f0f8ff; }
+
 .thread-icon {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), #7856ff);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 20px;
   color: #fff;
   font-weight: 800;
 }
 
 .thread-body { flex: 1; min-width: 0; }
 
-.thread-top-row {
+.thread-header-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
 }
 
-.thread-author {
-  font-size: 15px;
+.thread-author { font-size: 15px; font-weight: 700; color: var(--text); }
+.thread-cat-badge {
+  font-size: 11px;
   font-weight: 700;
-  color: var(--text);
-}
-
-.thread-time {
-  font-size: 15px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border-dark);
   color: var(--text-muted);
 }
+.thread-time { font-size: 14px; color: var(--text-muted); }
+.pin-badge { font-size: 13px; }
 
 .thread-name {
   font-size: 15px;
@@ -266,53 +363,120 @@ header {
   word-break: break-word;
 }
 
-.thread-actions {
+.thread-footer {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
   color: var(--text-muted);
   font-size: 13px;
 }
 
-.thread-actions svg { width: 18px; height: 18px; }
+.thread-reply-count { display: flex; align-items: center; gap: 4px; }
+.unread-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: 2px;
+}
 
-/* ━━━ スレッド内ビュー ━━━ */
+.thread-item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-pin, .btn-delete-thread {
+  background: none;
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 4px;
+  opacity: 0.45;
+  transition: all 0.15s;
+}
+
+.btn-pin:hover { opacity: 1; }
+.btn-pin.active { opacity: 1; }
+.btn-delete-thread:hover { opacity: 1; background: #fff0f1; }
+
+/* ━━━ スレッド内 ━━━ */
 .thread-top {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 12px 16px 0;
 }
 
-.btn-back {
-  display: inline-flex;
+.thread-top-actions {
+  display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.btn-back {
   background: none;
   border: none;
-  color: var(--text);
-  font-size: 20px;
-  font-weight: 800;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  padding: 8px 0;
-  margin-bottom: 4px;
+  padding: 0;
   transition: opacity 0.15s;
 }
 
 .btn-back:hover { opacity: 0.7; }
 
-.thread-top h2 {
-  font-size: 15px;
-  font-weight: 400;
+.btn-share {
+  background: none;
+  border: 1px solid var(--border-dark);
+  border-radius: 20px;
   color: var(--text-muted);
-  padding: 8px 0 12px 36px;
-  line-height: 1.5;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
 }
+
+.btn-share:hover { border-color: var(--accent); color: var(--accent); }
+
+.thread-top h2 {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.post-search-bar { padding-bottom: 10px; }
+
+.post-search-bar input {
+  width: 100%;
+  background: var(--bg);
+  border: 1.5px solid var(--border-dark);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 7px 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.post-search-bar input:focus { border-color: var(--accent); }
+.post-search-bar input::placeholder { color: var(--text-muted); }
 
 /* ━━━ 投稿一覧 ━━━ */
 .post-list {
   display: flex;
   flex-direction: column;
-  padding-bottom: 180px;
+  padding-bottom: 240px;
 }
 
 .post-item {
@@ -324,6 +488,8 @@ header {
   animation: fadeInPost 0.18s ease;
 }
 
+.post-item.hidden-by-search { display: none; }
+
 @keyframes fadeInPost {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -333,14 +499,13 @@ header {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #536471, #2f3336);
+  background: var(--bg);
+  border: 1px solid var(--border);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  font-weight: 800;
-  color: #fff;
+  font-size: 22px;
 }
 
 .post-right { flex: 1; min-width: 0; }
@@ -349,44 +514,145 @@ header {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   flex-wrap: wrap;
 }
 
-.post-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.post-id {
-  font-size: 15px;
-  color: var(--text-muted);
-}
-
+.post-name { font-size: 15px; font-weight: 700; color: var(--text); }
 .post-dot { color: var(--text-muted); font-size: 13px; }
-
-.post-time {
-  font-size: 15px;
-  color: var(--text-muted);
-}
-
+.post-time { font-size: 14px; color: var(--text-muted); }
+.post-edited { font-size: 12px; color: var(--text-dim); font-style: italic; }
 .post-num {
   margin-left: auto;
   font-size: 12px;
   color: var(--text-dim);
   background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 1px 6px;
+  cursor: pointer;
 }
+
+.post-num:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 引用返信 */
+.post-reply-ref {
+  background: var(--bg);
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.post-reply-ref:hover { background: #e8f5fe; }
 
 .post-body {
   font-size: 15px;
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
+  margin-bottom: 6px;
 }
+
+.post-image {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 10px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  object-fit: cover;
+}
+
+/* リアクション */
+.reaction-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.reaction-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg);
+  border: 1.5px solid var(--border-dark);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.reaction-btn:hover { border-color: var(--accent); background: #e8f5fe; }
+.reaction-btn.active { background: #e8f5fe; border-color: var(--accent); color: var(--accent); }
+.reaction-count { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.reaction-btn.active .reaction-count { color: var(--accent); }
+
+.add-reaction-btn {
+  background: none;
+  border: 1.5px dashed var(--border-dark);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.add-reaction-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.reaction-picker {
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border-dark);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  gap: 4px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  z-index: 50;
+}
+
+.reaction-picker button {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+
+.reaction-picker button:hover { background: var(--bg); }
+
+/* 投稿アクション */
+.post-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-reply-post, .btn-edit-post, .btn-delete-post {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.btn-reply-post:hover { color: var(--accent); background: #e8f5fe; }
+.btn-edit-post:hover { color: var(--success); background: #e6f7f2; }
+.btn-delete-post:hover { color: var(--danger); background: #fff0f1; }
 
 /* ━━━ 投稿フォーム（固定） ━━━ */
 .post-form-wrap {
@@ -394,19 +660,66 @@ header {
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(14px);
   border-top: 1px solid var(--border);
-  padding: 14px 0 18px;
+  padding: 10px 0 14px;
   z-index: 100;
 }
 
-.post-form {
+.reply-indicator {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  background: #e8f5fe;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 600;
 }
+
+.reply-indicator button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.image-preview-area {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.image-preview-area img {
+  max-height: 80px;
+  max-width: 160px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.cancel-image-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--text);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-form { padding: 0 16px; }
 
 .post-form-row {
   display: flex;
@@ -418,7 +731,7 @@ header {
   font-size: 26px;
   line-height: 1;
   flex-shrink: 0;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
 }
 
 .post-form textarea {
@@ -437,10 +750,7 @@ header {
   flex: 1;
 }
 
-.post-form textarea:focus {
-  border-color: var(--accent);
-}
-
+.post-form textarea:focus { border-color: var(--accent); }
 .post-form textarea::placeholder { color: var(--text-muted); }
 
 .post-form .btn-primary {
@@ -453,30 +763,37 @@ header {
   white-space: nowrap;
 }
 
-/* ━━━ 削除ボタン ━━━ */
-.btn-delete-post, .btn-delete-thread {
-  background: none;
-  border: none;
-  font-size: 14px;
+.form-bottom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-image-label {
+  font-size: 20px;
   cursor: pointer;
   padding: 2px 4px;
-  border-radius: 4px;
-  opacity: 0.4;
-  transition: all 0.15s;
-  margin-left: auto;
+  border-radius: 6px;
+  transition: background 0.15s;
 }
 
-.btn-delete-post:hover, .btn-delete-thread:hover {
-  opacity: 1;
-  background: #fff0f1;
+.btn-image-label:hover { background: var(--bg); }
+
+.char-counter {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
 }
 
-/* ━━━ 下書き ━━━ */
+.char-counter.warn { color: #f59e0b; }
+.char-counter.danger { color: var(--danger); font-weight: 700; }
+
 .draft-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding-top: 8px;
+  gap: 6px;
+  margin-left: auto;
 }
 
 .btn-draft-save, .btn-draft-list {
@@ -486,7 +803,7 @@ header {
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 600;
-  padding: 5px 12px;
+  padding: 4px 10px;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -496,12 +813,9 @@ header {
   color: var(--accent);
 }
 
-.auto-save-label {
-  font-size: 11px;
-  color: var(--text-dim);
-  margin-left: 4px;
-}
+.auto-save-label { font-size: 11px; color: var(--text-dim); }
 
+/* ━━━ 下書き一覧 ━━━ */
 .draft-modal { max-height: 80vh; display: flex; flex-direction: column; }
 
 .draft-list {
@@ -517,7 +831,6 @@ header {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px 14px;
-  cursor: pointer;
   transition: border-color 0.15s;
   display: flex;
   align-items: flex-start;
@@ -526,25 +839,18 @@ header {
 
 .draft-item:hover { border-color: var(--accent); }
 
-.draft-content {
-  flex: 1;
-  min-width: 0;
-}
+.draft-content { flex: 1; min-width: 0; cursor: pointer; }
 
 .draft-text {
   font-size: 14px;
   color: var(--text);
-  line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 4px;
 }
 
-.draft-time {
-  font-size: 12px;
-  color: var(--text-muted);
-}
+.draft-time { font-size: 12px; color: var(--text-muted); }
 
 .btn-draft-delete {
   background: none;
@@ -559,16 +865,13 @@ header {
 }
 
 .btn-draft-delete:hover { color: var(--danger); background: #fff0f1; }
-
-.draft-empty {
-  text-align: center;
-  color: var(--text-muted);
-  padding: 32px;
-  font-size: 14px;
-}
+.draft-empty { text-align: center; color: var(--text-muted); padding: 32px; font-size: 14px; }
 
 /* ━━━ スマホ対応 ━━━ */
 @media (max-width: 640px) {
-  .thread-top h2 { font-size: 14px; }
+  .thread-top h2 { font-size: 15px; }
   .post-body { font-size: 14px; }
+  .icon-grid { grid-template-columns: repeat(6, 1fr); }
+  .form-bottom-row { flex-wrap: wrap; gap: 6px; }
+  .draft-actions { margin-left: 0; }
 }
