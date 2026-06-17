@@ -422,16 +422,23 @@ header {
 }
 
 .post-form textarea {
-  background: transparent;
-  border: none;
+  background: var(--bg);
+  border: 1.5px solid var(--border-dark);
+  border-radius: 12px;
   color: var(--text);
-  font-size: 17px;
+  font-size: 16px;
   font-family: inherit;
-  padding: 0;
+  padding: 12px 14px;
   outline: none;
   resize: none;
   line-height: 1.6;
   min-height: 80px;
+  transition: border-color 0.15s;
+  flex: 1;
+}
+
+.post-form textarea:focus {
+  border-color: var(--accent);
 }
 
 .post-form textarea::placeholder { color: var(--text-muted); }
