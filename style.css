@@ -397,7 +397,7 @@ header {
   background: rgba(255,255,255,0.92);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
-  padding: 10px 0 14px;
+  padding: 14px 0 18px;
   z-index: 100;
 }
 
@@ -425,13 +425,13 @@ header {
   background: transparent;
   border: none;
   color: var(--text);
-  font-size: 15px;
+  font-size: 17px;
   font-family: inherit;
   padding: 0;
   outline: none;
   resize: none;
   line-height: 1.6;
-  min-height: 44px;
+  min-height: 80px;
 }
 
 .post-form textarea::placeholder { color: var(--text-muted); }
