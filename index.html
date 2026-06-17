@@ -10,9 +10,27 @@
   <header>
     <div class="header-inner">
       <span class="site-logo" id="siteLogo">掲示板</span>
-      <button class="btn-new" id="btnNew">スレを立てる</button>
+      <div class="header-actions">
+        <button class="btn-profile" id="btnProfile" title="プロフィール設定">🐱</button>
+        <button class="btn-new" id="btnNew">スレを立てる</button>
+      </div>
     </div>
   </header>
+
+  <!-- プロフィール設定モーダル -->
+  <div class="modal-overlay hidden" id="profileModal">
+    <div class="modal">
+      <p class="modal-title">プロフィール設定</p>
+      <label class="profile-label">名前</label>
+      <input type="text" id="profileNameInput" placeholder="名無し" maxlength="30">
+      <label class="profile-label">アイコン</label>
+      <div class="icon-grid" id="iconGrid"></div>
+      <div class="modal-actions" style="margin-top:20px">
+        <button class="btn-primary" id="saveProfile">保存</button>
+        <button class="btn-cancel" id="cancelProfile">キャンセル</button>
+      </div>
+    </div>
+  </div>
 
   <!-- スレ立てモーダル -->
   <div class="modal-overlay hidden" id="modal">
@@ -50,11 +68,9 @@
       <div class="container">
         <div class="post-form">
           <div class="post-form-row">
-            <div class="post-form-inputs">
-              <input type="text" id="postName" placeholder="名前（空欄で名無し）" maxlength="30">
-              <textarea id="postContent" placeholder="いまどうしてる？" maxlength="1000" rows="2"></textarea>
-            </div>
-            <button class="btn-primary" id="submitPost">書き込む</button>
+            <div class="post-my-avatar" id="postMyAvatar">🐱</div>
+            <textarea id="postContent" placeholder="書き込む..." maxlength="1000" rows="2"></textarea>
+            <button class="btn-primary" id="submitPost">投稿</button>
           </div>
         </div>
       </div>

@@ -5,6 +5,35 @@ const SUPABASE_URL = 'https://hjnalcnbzckapbfwlzdr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqbmFsY25iemNrYXBiZndsemRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NzgyMzQsImV4cCI6MjA5NzI1NDIzNH0.7QBSRp-FDDcMEbPzprRiEaoa4s4FB7PCJSF4INOxz58';
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// 動物絵文字アイコン一覧
+const ICONS = [
+  '🐱','🐶','🦊','🐻','🐼','🐨','🐯','🦁',
+  '🐮','🐷','🐸','🐙','🦋','🐧','🦆','🦅',
+  '🦉','🐺','🦝','🦔','🐹','🐰','🦜','🐬',
+  '🐳','🦈','🦑','🐿️','🦒','🦓','🐘','🦏',
+];
+
+// プロフィールをlocalStorageから読む
+function loadProfile() {
+  return {
+    name: localStorage.getItem('bbs_name') || '',
+    icon: localStorage.getItem('bbs_icon') || '🐱',
+  };
+}
+
+// プロフィールをlocalStorageに保存
+function saveProfileData(name, icon) {
+  localStorage.setItem('bbs_name', name);
+  localStorage.setItem('bbs_icon', icon);
+}
+
+// ヘッダーとフォームのアイコンを更新
+function syncProfileUI() {
+  const { icon } = loadProfile();
+  document.getElementById('btnProfile').textContent = icon;
+  document.getElementById('postMyAvatar').textContent = icon;
+}
+
 // 現在開いているスレッドID
 let currentThreadId = null;
 // リアルタイムチャンネル
@@ -134,14 +163,14 @@ function appendPost(post, num) {
   }
 
   const name = post.name || '名無し';
+  const icon = post.icon || '🐱';
   const item = document.createElement('div');
   item.className = 'post-item';
   item.innerHTML =
-    '<div class="post-avatar">' + escapeHtml(name.charAt(0)) + '</div>' +
+    '<div class="post-avatar">' + icon + '</div>' +
     '<div class="post-right">' +
       '<div class="post-header">' +
         '<span class="post-name">' + escapeHtml(name) + '</span>' +
-        '<span class="post-id">ID:' + shortId(post.id) + '</span>' +
         '<span class="post-dot">·</span>' +
         '<span class="post-time">' + formatDate(post.created_at) + '</span>' +
         '<span class="post-num">' + num + '</span>' +
@@ -197,9 +226,10 @@ async function submitThread() {
 // ━━━ 投稿する ━━━
 
 async function submitPost() {
-  const nameEl = document.getElementById('postName');
   const contentEl = document.getElementById('postContent');
-  const name = nameEl.value.trim() || '名無し';
+  const profile = loadProfile();
+  const name = profile.name || '名無し';
+  const icon = profile.icon;
   const content = contentEl.value.trim();
   if (!content) return;
 
@@ -209,6 +239,7 @@ async function submitPost() {
   const { error: postError } = await db.from('posts').insert({
     thread_id: currentThreadId,
     name,
+    icon,
     content,
   });
 
@@ -251,6 +282,37 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+// ━━━ プロフィールモーダル ━━━
+
+let selectedIcon = '🐱';
+
+function openProfileModal() {
+  const profile = loadProfile();
+  selectedIcon = profile.icon;
+  document.getElementById('profileNameInput').value = profile.name;
+
+  // アイコングリッドを描画
+  const grid = document.getElementById('iconGrid');
+  grid.innerHTML = '';
+  ICONS.forEach(function(emoji) {
+    const btn = document.createElement('button');
+    btn.className = 'icon-btn' + (emoji === selectedIcon ? ' selected' : '');
+    btn.textContent = emoji;
+    btn.addEventListener('click', function() {
+      selectedIcon = emoji;
+      grid.querySelectorAll('.icon-btn').forEach(function(b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+    });
+    grid.appendChild(btn);
+  });
+
+  document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function closeProfileModal() {
+  document.getElementById('profileModal').classList.add('hidden');
+}
+
 // ━━━ イベント登録 ━━━
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -261,6 +323,19 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('submitPost').addEventListener('click', submitPost);
   document.getElementById('siteLogo').addEventListener('click', function() {
     if (currentThreadId) closeThread();
+  });
+
+  // プロフィール
+  document.getElementById('btnProfile').addEventListener('click', openProfileModal);
+  document.getElementById('cancelProfile').addEventListener('click', closeProfileModal);
+  document.getElementById('saveProfile').addEventListener('click', function() {
+    const name = document.getElementById('profileNameInput').value.trim();
+    saveProfileData(name, selectedIcon);
+    syncProfileUI();
+    closeProfileModal();
+  });
+  document.getElementById('profileModal').addEventListener('click', function(e) {
+    if (e.target === this) closeProfileModal();
   });
 
   // モーダル外クリックで閉じる
@@ -278,5 +353,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitPost();
   });
 
+  syncProfileUI();
   loadThreads();
 });
