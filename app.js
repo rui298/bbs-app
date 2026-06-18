@@ -143,7 +143,7 @@ function renderThreadList(threads) {
       <div class="thread-body">
         <div class="thread-header-row">
           <span class="thread-author">${escHtml(t.author_name || '名無し')}</span>
-          <span class="thread-cat-badge">${escHtml(t.category || '雑談')}</span>
+          <span class="thread-cat-badge" data-cat="${escAttr(t.category || '雑談')}">${escHtml(t.category || '雑談')}</span>
           <span class="thread-time">${formatTime(t.created_at)}</span>
           ${t.is_pinned ? '<span class="pin-badge">📌</span>' : ''}
         </div>
