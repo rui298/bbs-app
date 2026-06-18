@@ -17,6 +17,8 @@ let editPostId = null;
 let imageFile = null;
 let currentCategory = '全部';
 let boardSearchText = '';
+let pendingPosts = [];
+let typingTimer = null;
 
 // ─── ユーティリティ ───
 function debounce(fn, ms) {
@@ -217,25 +219,46 @@ async function openThread(thread) {
 
   await loadPosts(thread.id);
 
-  // リアルタイム購読
+  // リアルタイム購読（Presence + 新着投稿）
+  pendingPosts = [];
   if (realtimeChannel) sb.removeChannel(realtimeChannel);
-  realtimeChannel = sb.channel(`posts:${thread.id}`)
+  realtimeChannel = sb.channel(`thread:${thread.id}`, {
+    config: { presence: { key: getMyToken() } }
+  })
+    .on('presence', { event: 'sync' }, () => {
+      const state = realtimeChannel.presenceState();
+      updateViewerCount(state);
+      updateTypingIndicators(state);
+    })
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public', table: 'posts',
       filter: `thread_id=eq.${thread.id}`
     }, payload => {
-      // 自分が送信済みの投稿はスキップ
       if (!document.querySelector(`.post-item[data-id="${payload.new.id}"]`)) {
         currentThreadPostCount++;
-        appendPost(payload.new, currentThreadPostCount, null, []);
+        if (isNearBottom()) {
+          appendPost(payload.new, currentThreadPostCount, null, []);
+        } else {
+          pendingPosts.push(payload.new);
+          showNewPostBanner();
+        }
       }
     })
-    .subscribe();
+    .subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        const p = getProfile();
+        await realtimeChannel.track({ name: p.name, icon: p.icon, typing: false });
+      }
+    });
 }
 
 function closeThread() {
   if (realtimeChannel) { sb.removeChannel(realtimeChannel); realtimeChannel = null; }
   if (currentThread) markRead(currentThread.id, currentThreadPostCount);
+  pendingPosts = [];
+  document.getElementById('newPostBanner').classList.add('hidden');
+  document.getElementById('typingIndicator').classList.add('hidden');
+  document.getElementById('viewerCount').classList.add('hidden');
   currentThread = null;
   cancelReply();
   clearImagePreview();
@@ -452,6 +475,65 @@ function toggleReactionPicker(btn, postId) {
     };
     document.addEventListener('click', close);
   }, 0);
+}
+
+// ─── リアルタイム閲覧者数 ───
+function updateViewerCount(state) {
+  const count = Object.keys(state).length;
+  const el = document.getElementById('viewerCount');
+  if (count > 0) {
+    el.innerHTML = `<span class="viewer-dot"></span>${count}人が見ています`;
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+// ─── タイピングインジケーター ───
+function updateTypingIndicators(state) {
+  const myToken = getMyToken();
+  const typing = Object.entries(state)
+    .filter(([key, list]) => key !== myToken && list[0]?.typing)
+    .map(([_, list]) => list[0].name);
+
+  const el = document.getElementById('typingIndicator');
+  if (typing.length > 0) {
+    const names = typing.slice(0, 3).join('、');
+    el.textContent = `${names} が入力中...`;
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+function broadcastTyping() {
+  if (!realtimeChannel) return;
+  const p = getProfile();
+  realtimeChannel.track({ name: p.name, icon: p.icon, typing: true });
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
+    if (realtimeChannel) realtimeChannel.track({ name: p.name, icon: p.icon, typing: false });
+  }, 2000);
+}
+
+// ─── 新着投稿バナー ───
+function isNearBottom() {
+  return window.innerHeight + window.scrollY >= document.body.scrollHeight - 160;
+}
+
+function showNewPostBanner() {
+  const el = document.getElementById('newPostBanner');
+  document.getElementById('newPostCount').textContent = pendingPosts.length;
+  el.classList.remove('hidden');
+}
+
+function flushPendingPosts() {
+  pendingPosts.forEach(post => {
+    appendPost(post, currentThreadPostCount - pendingPosts.length + pendingPosts.indexOf(post) + 1, null, []);
+  });
+  pendingPosts = [];
+  document.getElementById('newPostBanner').classList.add('hidden');
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
 // ─── 引用返信 ───
@@ -785,10 +867,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submitPost();
   });
 
-  // 文字数 & 自動保存
+  // 文字数 & 自動保存 & タイピングbroadcast
   document.getElementById('postContent').addEventListener('input', () => {
     updateCharCount();
     autoSave();
+    broadcastTyping();
   });
 
   // 引用キャンセル
@@ -817,10 +900,15 @@ document.addEventListener('DOMContentLoaded', () => {
     editPostId = null;
   });
 
-  // スクロールトップ
+  // 新着バナークリック
+  document.getElementById('newPostBanner').addEventListener('click', flushPendingPosts);
+
+  // スクロールトップ & 新着バナー自動表示
   const scrollTopBtn = document.getElementById('scrollTop');
   window.addEventListener('scroll', () => {
     scrollTopBtn.classList.toggle('hidden', window.scrollY < 300);
+    // 最下部に来たら自動でペンディング投稿を表示
+    if (isNearBottom() && pendingPosts.length > 0) flushPendingPosts();
   });
   scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 

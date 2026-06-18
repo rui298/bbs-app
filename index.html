@@ -104,7 +104,10 @@
       <div class="container">
         <div class="thread-top-actions">
           <button class="btn-back" id="btnBack">← 掲示板に戻る</button>
-          <button class="btn-share" id="btnShare" title="リンクをコピー">🔗 共有</button>
+          <div class="thread-top-right">
+            <span class="viewer-count hidden" id="viewerCount"></span>
+            <button class="btn-share" id="btnShare" title="リンクをコピー">🔗 共有</button>
+          </div>
         </div>
         <h2 id="threadTitle"></h2>
         <div class="post-search-bar">
@@ -116,6 +119,12 @@
       <div id="postList" class="post-list"></div>
       <div id="threadEmpty" class="empty hidden">最初の書き込みをどうぞ！</div>
     </div>
+    <!-- 新着投稿バナー -->
+    <div class="new-post-banner hidden" id="newPostBanner">
+      ↓ 新着投稿 <span id="newPostCount">0</span>件
+    </div>
+    <!-- タイピングインジケーター -->
+    <div class="typing-indicator hidden" id="typingIndicator"></div>
     <div class="post-form-wrap">
       <div class="container">
         <div class="reply-indicator hidden" id="replyIndicator">
