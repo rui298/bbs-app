@@ -1,5 +1,5 @@
 // Nanashi サービスワーカー — 静的ファイルをキャッシュ
-const CACHE = 'nanashi-v1';
+const CACHE = 'nanashi-v2';
 const STATIC = ['/index.html', '/style.css', '/app.js', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', e => {
