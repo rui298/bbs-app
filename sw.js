@@ -1,5 +1,5 @@
 // Nanashi サービスワーカー — 静的ファイルをキャッシュ
-const CACHE = 'nanashi-v2';
+const CACHE = 'nanashi-v3';
 const STATIC = ['/index.html', '/style.css', '/app.js', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', e => {
@@ -11,7 +11,8 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    ).then(() => self.clients.matchAll({ type: 'window' }))
+     .then(clients => clients.forEach(client => client.navigate(client.url)))
   );
   self.clients.claim();
 });
