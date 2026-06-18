@@ -1,7 +1,10 @@
 // Supabase設定
 const SUPABASE_URL = 'https://hjnalcnbzckapbfwlzdr.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqbmFsY25iemNrYXBiZndsemRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NzgyMzQsImV4cCI6MjA5NzI1NDIzNH0.7QBSRp-FDDcMEbPzprRiEaoa4s4FB7PCJSF4INOxz58';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// x-owner-token を全リクエストに付与（RLSポリシーの所有者検証に使用）
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  global: { headers: { 'x-owner-token': getMyToken() } }
+});
 
 // アイコン・リアクション定数
 const EMOJIS = ['🐱','🐶','🦊','🐻','🐼','🐨','🐯','🦁','🐸','🐧','🐦','🦆','🦅','🦋','🐙','🦑','🐠','🐟','🦀','🐝','🌸','🌺','🍀','🌵','🌈','⭐','🔥','💎','🎮','🎵','🎨','🍕'];
@@ -48,6 +51,33 @@ function escHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// URL を自動リンク化（エスケープ後にリンク挿入）
+function linkify(text) {
+  const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
+  return text.split(urlRegex).map((part, i) => {
+    if (i % 2 === 1) {
+      const escapedUrl = escHtml(part);
+      return `<a href="${escapedUrl}" target="_blank" rel="noopener noreferrer" class="post-link">${escapedUrl}</a>`;
+    }
+    return escHtml(part);
+  }).join('');
+}
+
+// ライトボックスを開く
+function openLightbox(url) {
+  const overlay = document.getElementById('lightbox');
+  document.getElementById('lightboxImg').src = url;
+  overlay.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+// ライトボックスを閉じる
+function closeLightbox() {
+  document.getElementById('lightbox').classList.add('hidden');
+  document.getElementById('lightboxImg').src = '';
+  document.body.style.overflow = '';
 }
 
 function escAttr(str) {
@@ -108,7 +138,7 @@ function markRead(threadId, count) {
 // ─── スレッド一覧 ───
 async function loadThreads() {
   const { data, error } = await sb
-    .from('threads')
+    .from('threads_view')
     .select('*')
     .order('is_pinned', { ascending: false })
     .order('last_post_at', { ascending: false });
@@ -134,7 +164,7 @@ function renderThreadList(threads) {
   const myToken = getMyToken();
 
   filtered.forEach(t => {
-    const isOwner = t.owner_token === myToken;
+    const isOwner = t.is_mine === true;
     const unread = getUnread(t.id, t.post_count);
     const item = document.createElement('div');
     item.className = `thread-item${t.is_pinned ? ' pinned' : ''}`;
@@ -178,7 +208,7 @@ function renderThreadList(threads) {
       pinBtn.addEventListener('click', async e => {
         e.stopPropagation();
         const newPinned = pinBtn.dataset.pinned === 'true' ? false : true;
-        await sb.from('threads').update({ is_pinned: newPinned }).eq('id', t.id).eq('owner_token', myToken);
+        await sb.from('threads').update({ is_pinned: newPinned }).eq('id', t.id);
         loadThreads();
       });
     }
@@ -189,7 +219,7 @@ function renderThreadList(threads) {
       delBtn.addEventListener('click', async e => {
         e.stopPropagation();
         if (!confirm('このスレッドを削除しますか？')) return;
-        await sb.from('threads').delete().eq('id', t.id).eq('owner_token', myToken);
+        await sb.from('threads').delete().eq('id', t.id);
         loadThreads();
       });
     }
@@ -235,11 +265,16 @@ async function openThread(thread) {
       filter: `thread_id=eq.${thread.id}`
     }, payload => {
       if (!document.querySelector(`.post-item[data-id="${payload.new.id}"]`)) {
+        // リアルタイムペイロードから is_mine を計算して owner_token を削除
+        const post = { ...payload.new };
+        post.is_mine = (post.owner_token === getMyToken());
+        delete post.owner_token;
+
         currentThreadPostCount++;
         if (isNearBottom()) {
-          appendPost(payload.new, currentThreadPostCount, null, []);
+          appendPost(post, currentThreadPostCount, null, []);
         } else {
-          pendingPosts.push(payload.new);
+          pendingPosts.push(post);
           showNewPostBanner();
         }
       }
@@ -273,7 +308,7 @@ function closeThread() {
 // ─── 投稿一覧読み込み ───
 async function loadPosts(threadId) {
   const { data: posts, error } = await sb
-    .from('posts')
+    .from('posts_view')
     .select('*')
     .eq('thread_id', threadId)
     .order('created_at', { ascending: true });
@@ -289,7 +324,7 @@ async function loadPosts(threadId) {
   const postIds = (posts || []).map(p => p.id);
   let reactionMap = {};
   if (postIds.length) {
-    const { data: reactions } = await sb.from('reactions').select('*').in('post_id', postIds);
+    const { data: reactions } = await sb.from('reactions_view').select('*').in('post_id', postIds);
     (reactions || []).forEach(r => {
       if (!reactionMap[r.post_id]) reactionMap[r.post_id] = [];
       reactionMap[r.post_id].push(r);
@@ -319,8 +354,7 @@ function appendPost(post, num, postMap, reactions) {
 
   if (!num) num = list.querySelectorAll('.post-item').length + 1;
 
-  const myToken = getMyToken();
-  const isOwner = post.owner_token === myToken;
+  const isOwner = post.is_mine === true;
 
   // 引用返信プレビュー（reply_to は UUID）
   let replyHtml = '';
@@ -353,7 +387,7 @@ function appendPost(post, num, postMap, reactions) {
         <span class="post-num" data-num="${num}">&gt;&gt;${num}</span>
       </div>
       ${replyHtml}
-      <div class="post-body">${escHtml(post.content)}</div>
+      <div class="post-body">${linkify(post.content)}</div>
       ${imgHtml}
       <div class="reaction-bar" data-post-id="${post.id}">
         ${reactionHtml}
@@ -401,21 +435,20 @@ function appendPost(post, num, postMap, reactions) {
   const delBtn = item.querySelector('.btn-delete-post');
   if (delBtn) delBtn.addEventListener('click', () => deletePost(post.id));
 
-  // 画像クリックで別タブ
+  // 画像クリックでライトボックス表示
   const img = item.querySelector('.post-image');
-  if (img) img.addEventListener('click', () => window.open(post.image_url, '_blank'));
+  if (img) img.addEventListener('click', () => openLightbox(post.image_url));
 
   list.appendChild(item);
 }
 
 // ─── リアクション ───
 function buildReactionHtml(reactions, postId) {
-  const myToken = getMyToken();
   const counts = {};
   const mine = new Set();
   (reactions || []).forEach(r => {
     counts[r.emoji] = (counts[r.emoji] || 0) + 1;
-    if (r.owner_token === myToken) mine.add(r.emoji);
+    if (r.is_mine) mine.add(r.emoji);
   });
   return Object.entries(counts).map(([emoji, count]) =>
     `<button class="reaction-btn${mine.has(emoji) ? ' active' : ''}" data-emoji="${emoji}" data-post-id="${postId}">
@@ -426,11 +459,11 @@ function buildReactionHtml(reactions, postId) {
 
 async function toggleReaction(postId, emoji, bar) {
   const myToken = getMyToken();
-  const { data: existing } = await sb.from('reactions')
+  const { data: existing } = await sb.from('reactions_view')
     .select('id')
     .eq('post_id', postId)
     .eq('emoji', emoji)
-    .eq('owner_token', myToken)
+    .eq('is_mine', true)
     .maybeSingle();
 
   if (existing) {
@@ -440,7 +473,7 @@ async function toggleReaction(postId, emoji, bar) {
   }
 
   // バー再描画
-  const { data: reactions } = await sb.from('reactions').select('*').eq('post_id', postId);
+  const { data: reactions } = await sb.from('reactions_view').select('*').eq('post_id', postId);
   const addBtnHtml = `<button class="add-reaction-btn" data-post-id="${postId}">＋</button>`;
   bar.innerHTML = buildReactionHtml(reactions || [], postId) + addBtnHtml;
 
@@ -566,8 +599,7 @@ async function saveEdit() {
 
   await sb.from('posts')
     .update({ content, edited_at: new Date().toISOString() })
-    .eq('id', editPostId)
-    .eq('owner_token', getMyToken());
+    .eq('id', editPostId);
 
   document.getElementById('editModal').classList.add('hidden');
   editPostId = null;
@@ -578,11 +610,11 @@ async function saveEdit() {
 // ─── 投稿削除 ───
 async function deletePost(postId) {
   if (!confirm('この投稿を削除しますか？')) return;
-  await sb.from('posts').delete().eq('id', postId).eq('owner_token', getMyToken());
+  await sb.from('posts').delete().eq('id', postId);
   const item = document.querySelector(`.post-item[data-id="${postId}"]`);
   if (item) item.remove();
   currentThreadPostCount = Math.max(0, currentThreadPostCount - 1);
-  await sb.from('threads').update({ post_count: currentThreadPostCount }).eq('id', currentThread.id);
+  // post_count はトリガーで自動更新されるため手動更新は不要
 }
 
 // ─── 投稿送信 ───
@@ -617,8 +649,13 @@ async function submitPost() {
     image_url: imageUrl,
   };
 
-  const { data: newPost, error } = await sb.from('posts').insert(payload).select().single();
+  // owner_token カラムは SELECT 不可のため明示的に除外、is_mine は手動設定
+  const { data: newPost, error } = await sb.from('posts')
+    .insert(payload)
+    .select('id,thread_id,name,icon,content,created_at,reply_to,edited_at,image_url')
+    .single();
   if (!error && newPost) {
+    newPost.is_mine = true;
     currentThreadPostCount++;
     document.getElementById('postContent').value = '';
     updateCharCount();
@@ -626,10 +663,7 @@ async function submitPost() {
     clearImagePreview();
     localStorage.removeItem(`bbs_auto_draft_${currentThread.id}`);
     document.getElementById('autoSaveLabel').textContent = '';
-    await sb.from('threads').update({
-      post_count: currentThreadPostCount,
-      last_post_at: new Date().toISOString()
-    }).eq('id', currentThread.id);
+    // post_count はトリガーで自動更新されるため手動更新は不要
     // 自分の投稿を即時表示（リアルタイムの重複防止）
     if (!document.querySelector(`.post-item[data-id="${newPost.id}"]`)) {
       // 既存投稿からpostMapを構築して引用プレビューを表示
@@ -781,7 +815,7 @@ async function handleHash() {
   const hash = location.hash;
   if (!hash.startsWith('#thread-')) return;
   const threadId = hash.replace('#thread-', '');
-  const { data } = await sb.from('threads').select('*').eq('id', threadId).maybeSingle();
+  const { data } = await sb.from('threads_view').select('*').eq('id', threadId).maybeSingle();
   if (data) openThread(data);
 }
 
@@ -918,6 +952,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === overlay) overlay.classList.add('hidden');
     });
   });
+
+  // ライトボックス閉じる
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox').addEventListener('click', e => {
+    if (e.target === e.currentTarget || e.target.classList.contains('lightbox-content')) closeLightbox();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+
+  // サービスワーカー登録（PWA対応）
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
 
   // ブラウザ戻るボタン対応
   window.addEventListener('popstate', () => {

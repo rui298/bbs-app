@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nanashi</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1D9BF0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Nanashi">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <!-- OGP -->
+  <meta property="og:title" content="Nanashi">
+  <meta property="og:description" content="匿名掲示板 Nanashi — みんなが集まる場所">
+  <meta property="og:type" content="website">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -153,6 +165,14 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 画像ライトボックス -->
+  <div class="lightbox hidden" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">✕</button>
+    <div class="lightbox-content">
+      <img class="lightbox-img" id="lightboxImg" alt="拡大表示">
     </div>
   </div>
 
